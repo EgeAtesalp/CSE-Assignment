@@ -1,47 +1,89 @@
 plugins {
-    id 'java'
-    id "com.google.protobuf" version "0.8.14"
+    id 'com.google.protobuf' version '0.8.11'
     id 'idea'
     id 'application'
+    id 'java'
 }
-
-description = 'Comment Service'
-group 'commentservice'
-version '0.1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    mavenLocal()
+}
+
+description = 'Comment Service'
+group = "commentservice"
+version = "0.1.0-SNAPSHOT"
+
+def grpcVersion = "1.26.0"
+def protocVersion = "3.11.4"
+
+
+ext {
+    speed = project.hasProperty('speed') ? project.getProperty('speed') : false
+    offlineCompile = new File("$buildDir/output/lib")
 }
 
 dependencies {
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.10.0'
-    compile group: 'io.grpc', name: 'grpc-all', version: '1.25.0'
-    compile("javax.annotation:javax.annotation-api:1.3.2")
+    if (speed) {
+        implementation fileTree(dir: offlineCompile, include: '*.jar')
+    } else {
+        implementation "com.google.api.grpc:proto-google-common-protos:1.17.0",
+                "io.grpc:grpc-protobuf:${grpcVersion}",
+                "io.grpc:grpc-stub:${grpcVersion}",
+                "io.grpc:grpc-netty:${grpcVersion}",
+                "io.grpc:grpc-services:${grpcVersion}",
+                "javax.annotation:javax.annotation-api:1.3.2"
+    }
+
 }
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.10.1'
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
     }
-
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.25.0'
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
         }
     }
-
     generateProtoTasks {
         all()*.plugins {
             grpc {}
         }
+        ofSourceSet('main')
     }
+}
 
-    sourceSets {
-        main {
-            java {
-                srcDirs 'build/generated/source/proto/main/grpc'
-                srcDirs 'build/generated/source/proto/main/java'
-            }
+// Inform IDEs like IntelliJ IDEA, Eclipse or NetBeans about the generated code.
+sourceSets {
+    main {
+        java {
+            srcDirs 'hipstershop'
+            srcDirs 'build/generated/source/proto/main/java/hipstershop'
+            srcDirs 'build/generated/source/proto/main/grpc/hipstershop'
         }
     }
+}
+
+startScripts.enabled = false
+
+// This to cache dependencies during Docker image building. First build will take time.
+// Subsequent build will be incremental.
+task downloadRepos(type: Copy) {
+    from configurations.compile
+    into offlineCompile
+    from configurations.runtime
+    into offlineCompile
+}
+
+task commentService(type: CreateStartScripts) {
+    mainClassName = 'hipstershop.CommentService'
+    applicationName = 'commentservice'
+    outputDir = new File(project.buildDir, 'tmp')
+    classpath = startScripts.classpath
+}
+
+applicationDistribution.into('bin') {
+    from(commentService)
+    fileMode = 0755
 }
