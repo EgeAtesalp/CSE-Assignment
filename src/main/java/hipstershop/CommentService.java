@@ -1,7 +1,6 @@
 package hipstershop;
 
 import hipstershop.Demo.Comments;
-import hipstershop.Demo.Empty;
 import hipstershop.Demo.AddCommentRequest;
 import hipstershop.Demo.Comment;
 import hipstershop.Demo.GetCommentRequest;
@@ -9,17 +8,24 @@ import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
-public class CommentService extends CommentServiceGrpc.CommentServiceImplBase {
+public class CommentService extends hipstershop.CommentServiceGrpc.CommentServiceImplBase {
 
     private static HashMap<String, ArrayList<Comment>> commentList;
 
     public CommentService(){
-        commentList = new HashMap<String, ArrayList<Comment>>();
+        commentList = new HashMap<>();
+        ArrayList<Comment> comments = new ArrayList<>();
+        Comment.Builder builder1 = Comment.newBuilder().setProductId("2ZYFJ3GM2N").setUserName("Tom").setCommentText("Liked it!!!").setDate(new Date(System.currentTimeMillis()).toString()).setStars(5);
+        comments.add(builder1.build());
+        Comment.Builder builder2 = Comment.newBuilder().setProductId("2ZYFJ3GM2N").setUserName("TheOneWhoHates").setCommentText("Hated it!!!").setDate(new Date(System.currentTimeMillis()).toString()).setStars(0);
+        comments.add(builder2.build());
+        commentList.put("2ZYFJ3GM2N", comments);
     }
 
     @Override
@@ -36,17 +42,24 @@ public class CommentService extends CommentServiceGrpc.CommentServiceImplBase {
     }
 
     @Override 
-    public void addComment(AddCommentRequest request, StreamObserver<Empty> observer){
+    public void addComment(AddCommentRequest request, StreamObserver<Comments> observer){
         Comment newComment = request.getComment();
         String pId = newComment.getProductId();
 
         saveComments(pId, newComment);
+
+        Comments.Builder builder = Comments.newBuilder();
+
+        builder.addAllComment(commentList.get(pId));
+
+        observer.onNext(builder.build());
+        observer.onCompleted();
     }
 
     private static List<Comment> getCommentsFromList(String productId) {
         ArrayList<Comment> commentsForId = commentList.get(productId);
 
-        if(commentsForId == null) commentsForId = new ArrayList<Comment>();
+        if(commentsForId == null) commentsForId = new ArrayList<>();
 
         return commentsForId;
     }
@@ -56,7 +69,7 @@ public class CommentService extends CommentServiceGrpc.CommentServiceImplBase {
         ArrayList<Comment> newComments = commentList.get(pId);
 
         if(newComments == null) {
-            newComments = new ArrayList<Comment>();
+            newComments = new ArrayList<>();
             newComments.add(comment);
             commentList.put(pId, newComments);
         } else {
