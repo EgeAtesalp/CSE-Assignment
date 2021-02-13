@@ -20,7 +20,7 @@ package hipstershop;
 
 service  CommentService {
     rpc GetComment(GetCommentRequest) returns (Comments) {}
-    rpc AddComment(AddCommentRequest) returns (Empty) {}
+    rpc AddComment(AddCommentRequest) returns (Comments) {}
 }
 
 message AddCommentRequest {
