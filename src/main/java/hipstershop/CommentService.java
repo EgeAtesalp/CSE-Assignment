@@ -5,6 +5,21 @@ import hipstershop.Demo.AddCommentRequest;
 import hipstershop.Demo.Comment;
 import hipstershop.Demo.GetCommentRequest;
 import io.grpc.stub.StreamObserver;
+import io.opencensus.common.Duration;
+import io.opencensus.contrib.grpc.metrics.RpcViews;
+import io.opencensus.exporter.stats.stackdriver.StackdriverStatsConfiguration;
+import io.opencensus.exporter.stats.stackdriver.StackdriverStatsExporter;
+import io.opencensus.exporter.trace.jaeger.JaegerExporterConfiguration;
+import io.opencensus.exporter.trace.jaeger.JaegerTraceExporter;
+import io.opencensus.exporter.trace.stackdriver.StackdriverTraceConfiguration;
+import io.opencensus.exporter.trace.stackdriver.StackdriverTraceExporter;
+import io.opencensus.trace.AttributeValue;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,6 +31,8 @@ import io.grpc.ServerBuilder;
 
 public class CommentService extends hipstershop.CommentServiceGrpc.CommentServiceImplBase {
 
+    private static final Logger logger = LogManager.getLogger(CommentService.class); //                  //
+
     private static HashMap<String, ArrayList<Comment>> commentList;
 
     public CommentService(){
@@ -26,6 +43,7 @@ public class CommentService extends hipstershop.CommentServiceGrpc.CommentServic
         Comment.Builder builder2 = Comment.newBuilder().setProductId("2ZYFJ3GM2N").setUserName("TheOneWhoHates").setCommentText("Hated it!!!").setDate(new Date(System.currentTimeMillis()).toString()).setStars(0);
         comments.add(builder2.build());
         commentList.put("2ZYFJ3GM2N", comments);
+        logger.info("new initiation, default comments added");
     }
 
     @Override
@@ -59,7 +77,10 @@ public class CommentService extends hipstershop.CommentServiceGrpc.CommentServic
     private static List<Comment> getCommentsFromList(String productId) {
         ArrayList<Comment> commentsForId = commentList.get(productId);
 
-        if(commentsForId == null) commentsForId = new ArrayList<>();
+        if(commentsForId == null){
+            commentsForId = new ArrayList<>();
+            logger.warn("No comments found in " + productId);
+        } 
 
         return commentsForId;
     }
@@ -71,9 +92,11 @@ public class CommentService extends hipstershop.CommentServiceGrpc.CommentServic
         if(newComments == null) {
             newComments = new ArrayList<>();
             newComments.add(comment);
+            logger.info("added new comment " + comment);
             commentList.put(pId, newComments);
         } else {
             newComments.add(comment);
+            logger.info("added new comment " + comment);
             commentList.replace(pId, newComments);
         }
     }
@@ -81,6 +104,7 @@ public class CommentService extends hipstershop.CommentServiceGrpc.CommentServic
     public static void main(String[] args) throws IOException, InterruptedException {
         Server server = ServerBuilder.forPort(9090).addService(new CommentService()).build();
         server.start();
+        logger.info("Ad Service started, listening on port 9090");
         server.awaitTermination();
     }
 
