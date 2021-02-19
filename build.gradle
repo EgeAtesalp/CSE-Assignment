@@ -24,8 +24,9 @@ dependencies {
                 "io.grpc:grpc-stub:${grpcVersion}",
                 "io.grpc:grpc-netty:${grpcVersion}",
                 "io.grpc:grpc-services:${grpcVersion}",
-                "javax.annotation:javax.annotation-api:1.3.2"
-                "org.apache.logging.log4j:log4j-core:2.13.0"
+                "javax.annotation:javax.annotation-api:1.3.2",
+                "org.apache.logging.log4j:log4j-core:2.13.0",
+                "org.apache.logging.log4j:log4j-api:2.13.0"
 
 }
 
