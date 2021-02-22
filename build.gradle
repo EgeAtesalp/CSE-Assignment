@@ -16,6 +16,7 @@ version = "0.1.0-SNAPSHOT"
 
 def grpcVersion = "1.26.0"
 def protocVersion = "3.11.4"
+def opencensusVersion = "0.25.0"
 
 
 dependencies {
@@ -26,7 +27,8 @@ dependencies {
                 "io.grpc:grpc-services:${grpcVersion}",
                 "javax.annotation:javax.annotation-api:1.3.2",
                 "org.apache.logging.log4j:log4j-core:2.13.0",
-                "org.apache.logging.log4j:log4j-api:2.13.0"
+                "org.apache.logging.log4j:log4j-api:2.13.0",
+                "io.opencensus:opencensus-exporter-trace-logging:${opencensusVersion}"
 
 }
 
